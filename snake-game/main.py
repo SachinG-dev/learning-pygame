@@ -4,6 +4,8 @@ from pygame.locals import *
 import random
 
 SIZE = 40  # Grid size
+WINDOW_WIDTH = 1000
+WINDOW_HEIGHT = 1000
 
 class Food: 
     def __init__(self, parent_screen):
@@ -17,21 +19,25 @@ class Food:
 
     def move(self):
         # Ensure food aligns with the grid and stays inside the screen bounds
-        self.x = random.randint(0, (500 // SIZE) - 1) * SIZE
-        self.y = random.randint(0, (500 // SIZE) - 1) * SIZE
+        self.x = random.randint(0, (WINDOW_WIDTH // SIZE) - 1) * SIZE
+        self.y = random.randint(0, (WINDOW_HEIGHT // SIZE) - 1) * SIZE
 
 class Snake:
     def __init__(self, parent_screen, length):
         self.length = length
         self.parent_screen = parent_screen
-        self.block = pygame.image.load("resources/block.png").convert_alpha()
+        self.block = pygame.image.load("resources/snack-body.png").convert_alpha()
         self.block = pygame.transform.scale(self.block, (SIZE, SIZE))
+        self.snackFace = pygame.image.load("resources/snack-face.png").convert_alpha()
+        self.snackFace = pygame.transform.scale(self.snackFace, (SIZE, SIZE))
+
         self.block_x = [SIZE] * length  # Correct initial positions
         self.block_y = [SIZE] * length
         self.direction = "down"
     
     def draw(self):
-        for i in range(self.length):
+        self.parent_screen.blit(self.snackFace, (self.block_x[0], self.block_y[0]))
+        for i in range(1, self.length):
             self.parent_screen.blit(self.block, (self.block_x[i], self.block_y[i]))
 
     def move_up(self):
@@ -74,15 +80,34 @@ class Snake:
 class Game: 
     def __init__(self):
         pygame.init()
-        self.surface = pygame.display.set_mode((500, 500))
+        pygame.mixer.init()  # Initialize sound system
+        self.surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.surface.fill((255, 255, 255))
         pygame.display.set_caption("Snake Game")
-        
+
         self.snake = Snake(self.surface, 2)
         self.food = Food(self.surface)
 
+        # Load Sounds
+        self.food_sound = pygame.mixer.Sound("resources/music/food_eat.mp3")
+        self.game_over_sound = pygame.mixer.Sound("resources/music/game_over.mp3")
+
+        # Load and Play Background Music in a Loop
+        pygame.mixer.music.load("resources/music/background_music.mp3")  # Load music file
+        pygame.mixer.music.play(-1)  # Play music in an infinite loop
+
     def is_collision(self, x1, y1, x2, y2):
         return x1 == x2 and y1 == y2  # Ensure exact position match
+
+    def check_boundary_collision(self):
+        """Check if the snake touches the game boundary"""
+        if (
+            self.snake.block_x[0] < 0 or self.snake.block_x[0] >= WINDOW_WIDTH or
+            self.snake.block_y[0] < 0 or self.snake.block_y[0] >= WINDOW_HEIGHT
+        ):
+            pygame.mixer.music.stop()  # Stop background music
+            pygame.mixer.Sound.play(self.game_over_sound)  # Play game over sound
+            raise Exception("Game Over - Boundary Hit")
 
     def play(self):
         self.snake.walk()
@@ -91,16 +116,21 @@ class Game:
         self.display_score()
         pygame.display.flip()  # Update the screen after everything is drawn
 
+        # Check boundary collision
+        self.check_boundary_collision()
+
         # Collision detection for snake eating food
         if self.is_collision(self.snake.block_x[0], self.snake.block_y[0], self.food.x, self.food.y):
-            print("Food eaten!")
+            pygame.mixer.Sound.play(self.food_sound)  # Play eating sound
             self.snake.increase_length()
             self.food.move()
 
         # Collision detection for snake hitting itself
         for i in range(3, self.snake.length):  # Start checking from index 3
             if self.is_collision(self.snake.block_x[0], self.snake.block_y[0], self.snake.block_x[i], self.snake.block_y[i]):
-                raise Exception("Game Over")  # Raise exception to handle game over
+                pygame.mixer.music.stop()  # Stop background music
+                pygame.mixer.Sound.play(self.game_over_sound)  # Play game over sound
+                raise Exception("Game Over - Self Collision")  
 
     def show_game_over(self):
         self.surface.fill((255, 255, 255))

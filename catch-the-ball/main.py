@@ -13,12 +13,21 @@ WIDTH, HEIGHT = screen_info.current_w, screen_info.current_h  # Full-screen size
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("Star Wars - Object Collection")
 
+# Load sounds
+pygame.mixer.init()
+pygame.mixer.music.load("resources/background_music.mp3")  # Background music
+pygame.mixer.music.set_volume(0.5)  # Adjust volume
+pygame.mixer.music.play(-1)  # Loop indefinitely
+
+score_sound = pygame.mixer.Sound("resources/food_eat.mp3")  # Play when object is collected
+miss_sound = pygame.mixer.Sound("resources/sound_1.mp3")  # Play when object is missed
+
 # Load player image (Bigger height)
 player_image = pygame.image.load("resources/player.png").convert_alpha()
 player_image = pygame.transform.scale(player_image, (200, 180))  # Increased height
 
 # Load falling object (Bigger size)
-object_image = pygame.image.load("resources/asteroid.webp").convert_alpha()
+object_image = pygame.image.load("resources/object_1.png").convert_alpha()
 object_image = pygame.transform.scale(object_image, (100, 100))  # Increased size
 
 # Colors
@@ -28,8 +37,9 @@ GREEN = (0, 255, 0)  # Reference point marker color
 # Game Variables
 player_x = WIDTH // 2
 player_y = HEIGHT - 200  # Adjusted for larger player image
-player_speed = 10
-falling_speed = 5
+base_player_speed = 10  # Base speed of player
+player_speed = base_player_speed  # Dynamic speed that changes with difficulty
+falling_speed = 5  # Base speed of falling objects
 score = 0
 
 # Initialize Mediapipe
@@ -102,8 +112,8 @@ while running:
     results = pose.process(frame_rgb)
 
     # Draw reference point on user camera feed
-    cv2.line(frame, (CAM_CENTER - MOVE_THRESHOLD, 0), (CAM_CENTER - MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Left marker
-    cv2.line(frame, (CAM_CENTER + MOVE_THRESHOLD, 0), (CAM_CENTER + MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Right marker
+    # cv2.line(frame, (CAM_CENTER - MOVE_THRESHOLD, 0), (CAM_CENTER - MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Left marker
+    # cv2.line(frame, (CAM_CENTER + MOVE_THRESHOLD, 0), (CAM_CENTER + MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Right marker
 
     # Draw skeleton outline on the user
     if results.pose_landmarks:
@@ -132,7 +142,7 @@ while running:
 
     # Convert OpenCV frame to Pygame surface
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = np.rot90(frame)  # **Fix: Ensure Correct Rotation**
+    frame = np.rot90(frame)  # Ensure Correct Rotation
     frame = pygame.surfarray.make_surface(frame)
     frame = pygame.transform.scale(frame, (350, 350))  # Increased size
     screen.blit(frame, (WIDTH - 360, 20))  # Adjusted position
@@ -145,6 +155,11 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
 
+    # **Increase Player Speed with Falling Speed**
+    if score % 5 == 0 and score > 0:
+        falling_speed += 0.05  # Increase falling speed
+        player_speed = base_player_speed + (falling_speed - 5) * 1.5  # Scale player speed
+
     # Update falling objects
     for obj in objects:
         obj["y"] += falling_speed
@@ -153,17 +168,15 @@ while running:
         if (player_x < obj["x"] < player_x + player_image.get_width() and
                 player_y < obj["y"] < player_y + player_image.get_height()):
             score += 1
+            pygame.mixer.Sound.play(score_sound)  # Play score sound
             objects.remove(obj)
             spawn_object()
 
         # Remove objects that fall off-screen & respawn
         if obj["y"] > HEIGHT:
+            pygame.mixer.Sound.play(miss_sound)  # Play miss sound
             objects.remove(obj)
             spawn_object()
-
-    # Increase speed over time
-    if score % 5 == 0 and score > 0:
-        falling_speed += 0.05
 
     # Draw falling objects
     for obj in objects:

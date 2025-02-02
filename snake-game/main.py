@@ -4,7 +4,7 @@ from pygame.locals import *
 import random
 
 SIZE = 40  # Grid size
-WINDOW_WIDTH = 1000
+WINDOW_WIDTH = 1500
 WINDOW_HEIGHT = 1000
 
 class Food: 

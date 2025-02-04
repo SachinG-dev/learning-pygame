@@ -26,7 +26,7 @@ WHITE = (255, 255, 255)
 
 # Game Variables
 gravity = 0.3  
-bird_x, bird_y = 100, HEIGHT // 2
+bird_x, bird_y = (WIDTH // 2) - 50, HEIGHT // 2  # Centering the ball horizontally
 bird_velocity = 0
 jump_strength = -6  
 pipe_speed = 2  
@@ -51,7 +51,7 @@ JUMP_THRESHOLD = 15
 
 # Create pipes
 def create_pipe():
-    gap = HEIGHT // 4  
+    gap = HEIGHT // 1 
     top_pipe_height = random.randint(HEIGHT // 6, HEIGHT // 2)
     bottom_pipe_y = top_pipe_height + gap
 
@@ -76,7 +76,7 @@ while running:
         break
 
     # Rotate frame if it's incorrectly oriented
-    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)  
+    frame = cv2.flip(frame, 1)  # Flip for mirror effect
 
     # Convert frame to RGB for Mediapipe
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -105,10 +105,8 @@ while running:
             if head_movement > JUMP_THRESHOLD:  
                 bird_velocity = jump_strength
                 print("✅ Jump Detected!")
-
-    # Flip the frame for a mirror effect
-    frame = cv2.flip(frame, 1)
-
+    
+    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)  
     # Convert OpenCV frame to Pygame surface
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = pygame.surfarray.make_surface(frame)
@@ -149,8 +147,8 @@ while running:
     for pipe in pipes:
         if (
             bird_x < pipe["x"] + 80
-            and bird_x + 50 > pipe["x"]
-            and (bird_y < pipe["top"] or bird_y + 35 > pipe["bottom"])
+            and bird_x + 100 > pipe["x"]  # Adjusted for correct collision with larger bird
+            and (bird_y < pipe["top"] or bird_y + 100 > pipe["bottom"])  # Adjusted collision height
         ):
             print("Game Over!")
             bird_y = HEIGHT // 2
@@ -160,7 +158,7 @@ while running:
             bird_velocity = 0
 
     # Check if bird hits ground
-    if bird_y > HEIGHT - 50 or bird_y < 0:
+    if bird_y > HEIGHT - 100 or bird_y < 0:  # Adjusted for correct boundary detection
         print("Game Over!")
         bird_y = HEIGHT // 2
         pipes.clear()
@@ -173,8 +171,8 @@ while running:
         screen.blit(pipe_top, (pipe["x"], pipe["top"] - 400))  # Top pipe
         screen.blit(pipe_bottom, (pipe["x"], pipe["bottom"]))  # Bottom pipe
 
-    # Draw bird
-    screen.blit(bird_image, (bird_x, bird_y))
+    # Draw bird **Centered**
+    screen.blit(bird_image, (bird_x, bird_y))  
 
     # Draw score
     font = pygame.font.SysFont("Arial", 30)

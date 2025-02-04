@@ -112,8 +112,8 @@ while running:
     results = pose.process(frame_rgb)
 
     # Draw reference point on user camera feed
-    # cv2.line(frame, (CAM_CENTER - MOVE_THRESHOLD, 0), (CAM_CENTER - MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Left marker
-    # cv2.line(frame, (CAM_CENTER + MOVE_THRESHOLD, 0), (CAM_CENTER + MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Right marker
+    cv2.line(frame, (CAM_CENTER - MOVE_THRESHOLD, 0), (CAM_CENTER - MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Left marker
+    cv2.line(frame, (CAM_CENTER + MOVE_THRESHOLD, 0), (CAM_CENTER + MOVE_THRESHOLD, CAM_HEIGHT), GREEN, 2)  # Right marker
 
     # Draw skeleton outline on the user
     if results.pose_landmarks:
@@ -156,9 +156,9 @@ while running:
                 running = False
 
     # **Increase Player Speed with Falling Speed**
-    if score % 5 == 0 and score > 0:
-        falling_speed += 0.05  # Increase falling speed
-        player_speed = base_player_speed + (falling_speed - 5) * 1.5  # Scale player speed
+    # if score % 5 == 0 and score > 0:
+    #     falling_speed += 0.05  # Increase falling speed
+    #     player_speed = base_player_speed + (falling_speed - 5) * 1.5  # Scale player speed
 
     # Update falling objects
     for obj in objects:
